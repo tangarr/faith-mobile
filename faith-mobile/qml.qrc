@@ -1,0 +1,20 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>logo.png</file>
+        <file>HostListView.qml</file>
+        <file>settings_active.png</file>
+        <file>settings_inactive.png</file>
+        <file>settings_pressed.png</file>
+        <file>LaboratoryConfig.qml</file>
+        <file>LaboratoryDiskLayout.qml</file>
+        <file>LaboratorySoftwareList.qml</file>
+        <file>LaboratoryUsersConfig.qml</file>
+        <file>FaithButton.qml</file>
+        <file>CreateDisk.qml</file>
+        <file>CreatePartition.qml</file>
+        <file>SelectHost.qml</file>
+        <file>RowOkCancel.qml</file>
+        <file>PartitionInfo.qml</file>
+    </qresource>
+</RCC>
