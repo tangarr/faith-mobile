@@ -134,6 +134,21 @@ QHash<int, QByteArray> LaboratoriesModel::roleNames() const
 
 }
 
+QList<quint32> LaboratoriesModel::selectedHosts()
+{
+    QList<quint32> out;
+    foreach (LaboratoriesModelElement *el, elements) {
+        ComputerLab* lab = static_cast<ComputerLab*>(el);
+        if (lab)
+        {
+            foreach (Host* h, lab->hosts()) {
+                if (h->checked()) out.append(h->ipUint32());
+            }
+        }
+    }
+    return out;
+}
+
 bool LaboratoriesModel::expand(int index)
 {
     ComputerLab *l = static_cast<ComputerLab*>(elements.at(index));

@@ -240,6 +240,33 @@ bool ApplicationManager::updateConfig()
     return true;
 }
 
+bool ApplicationManager::requestInstall()
+{
+    QString address = Config::instance()->server_address();
+    int port = Config::instance()->server_port();
+    QTcpSocket socket;
+    socket.connectToHost(address, port);
+    if (socket.state()!=QTcpSocket::ConnectedState) socket.waitForConnected();
+    if (socket.state()!=QTcpSocket::ConnectedState)
+    {
+        qDebug() << "error: " << socket.errorString();
+        return false;
+    }
+    FaithMessage::MsgRequestInstall(laboratoriesModel->selectedHosts()).send(&socket);
+    if (!socket.waitForReadyRead())
+    {
+        socket.disconnectFromHost();
+        if (socket.state()!=QTcpSocket::UnconnectedState) socket.waitForDisconnected();
+        return false;
+    }
+    FaithMessage msg;
+    msg.recive(&socket);
+    socket.disconnectFromHost();
+    if (socket.state()!=QTcpSocket::UnconnectedState) socket.waitForDisconnected();
+    if (msg.getMessageCode()!=Faithcore::OK) return false;
+    return true;
+}
+
 LaboratoriesModel *ApplicationManager::model()
 {
     return laboratoriesModel;

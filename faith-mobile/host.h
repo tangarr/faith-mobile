@@ -14,7 +14,7 @@ class Host : public LaboratoriesModelElement
     ComputerLab *_lab;
     DiskLayout::Layout _diskLayout;
 public:
-    Host(QString ip, QString hostname);
+    Host(QString ipUint32, QString hostname);
     // LaboratoriesModelElement interface
 public:
     bool isParent() const;
@@ -24,6 +24,7 @@ public:
     DiskLayout::Layout diskLayout() const;
     void checkDiskLayout();
     QString configFileName() const;
+    quint32 ipUint32() const;
 };
 
 #endif // HOST_H

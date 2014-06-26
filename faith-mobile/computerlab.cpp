@@ -383,4 +383,3 @@ bool ComputerLab::loadDiskSchemaFromHost(int index)
     emit diskCountChanged(_disks.count());
     return ret;
 }
-

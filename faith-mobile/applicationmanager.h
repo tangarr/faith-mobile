@@ -22,6 +22,7 @@ public:
 public slots:
     bool readConfig();
     bool updateConfig();
+    bool requestInstall();
     LaboratoriesModel *model();
 
 };

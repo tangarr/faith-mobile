@@ -65,7 +65,6 @@ public slots:
     int hostsCount() const;
     QString hostName(int index) const;
     bool loadDiskSchemaFromHost(int index);
-
 };
 
 #endif // COMPUTERLAB_H

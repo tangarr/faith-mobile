@@ -28,6 +28,11 @@ Rectangle {
             {
                 text: "Request Installation"
                 implicitWidth: window.width
+                onClicked:
+                {
+                    var out = applicationManager.requestInstall()
+                    console.log(out)
+                }
             }
         }
     }

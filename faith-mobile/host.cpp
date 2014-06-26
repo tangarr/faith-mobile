@@ -1,6 +1,7 @@
 #include "host.h"
 #include "computerlab.h"
 #include "faithMacro.h"
+#include "faithcore.h"
 
 Host::Host(QString ip, QString hostname)
 {
@@ -50,4 +51,9 @@ QString Host::configFileName() const
         out+=QString::number(x, 16).rightJustified(2, '0');
     }
     return out+".db";
+}
+
+quint32 Host::ipUint32() const
+{
+    return Faithcore::ipFromString(_ip);
 }
