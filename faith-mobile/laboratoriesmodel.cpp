@@ -62,7 +62,7 @@ int LaboratoriesModel::selectedHostCount()
     int out=0;
     foreach (LaboratoriesModelElement *el, elements) {
         ComputerLab* lab = static_cast<ComputerLab*>(el);
-        if (lab)
+        if (lab->inherits("ComputerLab"))
         {
             foreach (Host* h, lab->hosts()) {
                 if (h->checked()) out++;
@@ -139,7 +139,7 @@ QList<quint32> LaboratoriesModel::selectedHosts()
     QList<quint32> out;
     foreach (LaboratoriesModelElement *el, elements) {
         ComputerLab* lab = static_cast<ComputerLab*>(el);
-        if (lab)
+        if (lab->inherits("ComputerLab"))
         {
             foreach (Host* h, lab->hosts()) {
                 if (h->checked()) out.append(h->ipUint32());
