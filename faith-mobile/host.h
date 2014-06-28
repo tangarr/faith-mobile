@@ -21,8 +21,8 @@ public:
     QString name() const;
     void setLab(ComputerLab* lab);
     ComputerLab *lab() const;
-    DiskLayout::Layout diskLayout() const;
-    void checkDiskLayout();
+    DiskLayout::Layout diskLayoutStatus() const;
+    void checkDiskLayoutStatus();
     QString configFileName() const;
     quint32 ipUint32() const;
 };

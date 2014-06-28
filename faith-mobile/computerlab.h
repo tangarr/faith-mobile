@@ -44,12 +44,13 @@ public:
     bool isPartiallyChecked() const;        
     int diskCount();
     int userCount();
+    Disk *diskByName(QString devName);
 signals:
     void diskCountChanged(int arg);
     void userCountChanged(int arg);
 public slots:
     bool hasValidPartitionLayout();    
-    QObject *disk(int index);
+    QObject *disk(int index);    
     int partitionCount(int diskNumber);
     QString proposedNewDiskName();    
     bool createDisk(QString devname, DiskLabel::Label diskLabel);

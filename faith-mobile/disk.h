@@ -36,6 +36,8 @@ public:
     explicit Disk(DiskLabel::Label diskLabel, QString devName);
     ~Disk();
     void emitMinimumSizeChanged();
+    const QList <Partition*> partitions() const;
+    static int stringToMB(QString text);
 signals:
     void partitionCountChanged(int arg);
     void minimumSizeChanged(int arg);
@@ -43,7 +45,7 @@ public slots:
     int partitionCount() const;
     QObject *partition(int partitionNumber);
     QString devName() const;
-    DiskLabel::Label diskLayout() const;
+    DiskLabel::Label diskLabel() const;
     QString partitionName(int partitionNumber);
     QString partitionName(Partition* p);    
     void setBootablePartition(int index);

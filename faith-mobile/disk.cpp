@@ -1,6 +1,42 @@
 #include "disk.h"
 #include "partition.h"
 #include <QRegExp>
+#include <QVariant>
+#include <QDebug>
+
+int Disk::stringToMB(QString text)
+{
+    for (int i=text.length()-1; i>=0 ; i--)
+    {
+        if (text[i].isDigit() || text[i]=='.')
+        {
+            QString unit = text.mid(i+1);
+            QString number = text.left(i+1);
+
+            float tmp = QVariant(number).toFloat();
+            if (unit == "TB")
+            {
+                tmp*=1000000;
+            }
+            if (unit == "GB")
+            {
+                tmp*=1000;
+            }
+            else if (unit == "KB")
+            {
+                tmp/=1000;
+            }
+            else if (unit == "B")
+            {
+                tmp/=1000000;
+            }
+            int ret = (int)tmp;
+            qDebug() << number<< unit << ret;
+            return ret;
+        }
+    }
+    return 0;
+}
 
 void Disk::_read(QDataStream &stream)
 {
@@ -45,6 +81,11 @@ void Disk::emitMinimumSizeChanged()
     emit minimumSizeChanged(minimumSize());
 }
 
+const QList<Partition *> Disk::partitions() const
+{
+    return _partitions;
+}
+
 int Disk::partitionCount() const
 {
     return _partitions.count();
@@ -64,7 +105,7 @@ QString Disk::devName() const
     return _devName;
 }
 
-DiskLabel::Label Disk::diskLayout() const
+DiskLabel::Label Disk::diskLabel() const
 {
     return _diskLabel;
 }

@@ -116,7 +116,7 @@ bool ComputerLab::insertHost(Host *host, int index)
 {
     host->setLab(this);
     _hosts.insert(index, host);
-    if (hasValidPartitionLayout()) host->checkDiskLayout();
+    if (hasValidPartitionLayout()) host->checkDiskLayoutStatus();
     return true;
 }
 
@@ -148,7 +148,13 @@ bool ComputerLab::isPartiallyChecked() const
 
 bool ComputerLab::hasValidPartitionLayout()
 {
-    NOT_IMPLEMENTED_YET
+    if (_disks.empty()) return false;
+    foreach (Disk* d, _disks)
+    {
+        foreach (Partition* p, d->partitions()) {
+            if(p->mountpoint()=="/") return true;
+        }
+    }
     return false;
 }
 
@@ -160,6 +166,14 @@ int ComputerLab::diskCount()
 int ComputerLab::userCount()
 {
     return _users.count();
+}
+
+Disk *ComputerLab::diskByName(QString devName)
+{
+    foreach (Disk *d, _disks) {
+        if (d->devName()==devName) return d;
+    }
+    return 0;
 }
 
 QObject *ComputerLab::disk(int index)
@@ -299,40 +313,6 @@ QString ComputerLab::hostName(int index) const
     else return "";
 }
 
-int stringToMB(QString text)
-{
-    for (int i=text.length()-1; i>=0 ; i--)
-    {
-        if (text[i].isDigit() || text[i]=='.')
-        {
-            QString unit = text.mid(i+1);
-            QString number = text.left(i+1);
-
-            float tmp = QVariant(number).toFloat();
-            if (unit == "TB")
-            {
-                tmp*=1000000;
-            }
-            if (unit == "GB")
-            {
-                tmp*=1000;
-            }
-            else if (unit == "KB")
-            {
-                tmp/=1000;
-            }
-            else if (unit == "B")
-            {
-                tmp/=1000000;
-            }
-            int ret = (int)tmp;
-            qDebug() << number<< unit << ret;
-            return ret;
-        }
-    }
-    return 0;
-}
-
 bool ComputerLab::loadDiskSchemaFromHost(int index)
 {
     bool ret = false;
@@ -364,7 +344,7 @@ bool ComputerLab::loadDiskSchemaFromHost(int index)
                 query.exec();
                 bool primary = true;
                 while (query.next()) {
-                    int size = stringToMB(query.value(0).toString());
+                    int size = Disk::stringToMB(query.value(0).toString());
                     QString fstype = query.value(1).toString();
                     QString flags = query.value(2).toString();
                     if (flags.contains("extended"))

@@ -109,7 +109,7 @@ QVariant LaboratoriesModel::data(const QModelIndex &index, int role) const
     case RoleDiskLayoutStatus:
     {
         Host *h = static_cast<Host *>(elements.at(index.row()));
-        if (h) return h->diskLayout();
+        if (h) return h->diskLayoutStatus();
         else return QVariant();
     }
     default:

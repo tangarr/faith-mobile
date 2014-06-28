@@ -74,13 +74,9 @@ Rectangle {
             {
                 id: mountPoint
                 implicitWidth: window.width
-                model: ["/", "/boot", "/home", "/usr", "/var", "/tmp", "-"]
+                model: ["-", "/", "/boot", "/home", "/usr", "/var", "/tmp"]
                 enabled: (fstype.currentText=="swap") ? false : true
                 editable: true
-                onEditTextChanged:
-                {
-
-                }
             }
             CheckBox
             {
