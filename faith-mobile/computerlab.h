@@ -24,6 +24,7 @@ private: // fields
     QStringList _softwareList;
     QString _rootPasswordHash;
     QByteArray _backup;
+    bool _hasValidDiskLayout;
 private: // functions
     bool _readConfiguration(const QByteArray& data);
     QByteArray &_writeConfiguration() const;
@@ -45,9 +46,12 @@ public:
     int diskCount();
     int userCount();
     Disk *diskByName(QString devName);
+    void removeHost(Host* h);
+    void clear();
 signals:
     void diskCountChanged(int arg);
     void userCountChanged(int arg);
+    void diskLayoutStatusChanged(ComputerLab*);
 public slots:
     bool hasValidPartitionLayout();    
     QObject *disk(int index);    
@@ -63,9 +67,15 @@ public slots:
     bool removeDisk(int index);
     bool removePartition(int diskIndex, int partitionIndex);
     bool removeDisks();
+    bool removeUsers();
     int hostsCount() const;
     QString hostName(int index) const;
     bool loadDiskSchemaFromHost(int index);
+    void checkDiskLayout();
+    void changeSoft(QString soft, bool checked);
+    bool containsSoft(QString soft);
+    bool hasRootPassword();
+    void setRootPassword(QString password);
 };
 
 #endif // COMPUTERLAB_H

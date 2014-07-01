@@ -12,12 +12,8 @@
 
 bool ComputerLab::_readConfiguration(const QByteArray &data)
 {
-    qDebug() << Q_FUNC_INFO << _disks.count();
     if (!data.size()) return false;
-    foreach (Disk *d, _disks) delete d;
-    foreach (User *u, _users) delete u;
-    _disks.clear();
-    _users.clear();
+    clear();
 
     QDataStream stream(data);
     int count;
@@ -37,12 +33,12 @@ bool ComputerLab::_readConfiguration(const QByteArray &data)
         u->_read(stream);
         _users.append(u);
     }
+    stream >> _softwareList;
     return true;
 }
 
 QByteArray &ComputerLab::_writeConfiguration() const
-{    
-    qDebug() << _disks.count();
+{
     QByteArray *array = new QByteArray();
     QDataStream stream(array, QIODevice::WriteOnly);
     stream << _rootPasswordHash << _softwareList;
@@ -50,6 +46,7 @@ QByteArray &ComputerLab::_writeConfiguration() const
     foreach (Disk *d, _disks) d->_write(stream);
     stream << (int)_users.count();
     foreach (User *u, _users) u->_write(stream);
+    stream << _softwareList;
     return *array;
 }
 
@@ -64,6 +61,8 @@ ComputerLab::ComputerLab(QString name, LaboratoriesModel *parent)
     _parent = parent;
     _expanded = false;
     readConfiguration();
+    checkDiskLayout();
+    _softwareList.append("BASE");
 }
 
 bool ComputerLab::isParent() const
@@ -148,14 +147,7 @@ bool ComputerLab::isPartiallyChecked() const
 
 bool ComputerLab::hasValidPartitionLayout()
 {
-    if (_disks.empty()) return false;
-    foreach (Disk* d, _disks)
-    {
-        foreach (Partition* p, d->partitions()) {
-            if(p->mountpoint()=="/") return true;
-        }
-    }
-    return false;
+    return _hasValidDiskLayout;
 }
 
 int ComputerLab::diskCount()
@@ -174,6 +166,20 @@ Disk *ComputerLab::diskByName(QString devName)
         if (d->devName()==devName) return d;
     }
     return 0;
+}
+
+void ComputerLab::removeHost(Host *h)
+{
+    _hosts.removeOne(h);
+}
+
+void ComputerLab::clear()
+{
+    removeDisks();
+    removeUsers();
+    _rootPasswordHash="";
+    _softwareList.clear();
+    _softwareList.append("BASE");
 }
 
 QObject *ComputerLab::disk(int index)
@@ -307,6 +313,19 @@ bool ComputerLab::removeDisks()
     else return false;
 }
 
+bool ComputerLab::removeUsers()
+{
+    if (_users.count())
+    {
+        foreach (User *u, _users) {
+            delete u;
+        }
+        _users.clear();
+        return true;
+    }
+    else return false;
+}
+
 QString ComputerLab::hostName(int index) const
 {
     if (index>=0 && index<_hosts.count()) return _hosts.at(index)->name();
@@ -316,7 +335,6 @@ QString ComputerLab::hostName(int index) const
 bool ComputerLab::loadDiskSchemaFromHost(int index)
 {
     bool ret = false;
-    qDebug() << Q_FUNC_INFO;
     removeDisks();
     emit diskCountChanged(_disks.count());
     if (index>=0 && index<_hosts.count())
@@ -334,7 +352,6 @@ bool ComputerLab::loadDiskSchemaFromHost(int index)
 
             foreach (QString d, diskList) {
                 QStringList tmp = d.split("#");
-                qDebug() << tmp;
                 DiskLabel::Label label = DiskLabel::MsDos;
                 if (tmp.at(1)!="msdos") label = DiskLabel::GPT;
                 createDisk(tmp.at(0), label);
@@ -362,4 +379,56 @@ bool ComputerLab::loadDiskSchemaFromHost(int index)
     }
     emit diskCountChanged(_disks.count());
     return ret;
+}
+
+void ComputerLab::checkDiskLayout()
+{
+    bool oldLayout = _hasValidDiskLayout;
+    _hasValidDiskLayout = false;
+    foreach (Disk* d, _disks)
+    {
+        if (_hasValidDiskLayout) break;
+        foreach (Partition* p, d->partitions()) {
+            if(p->mountpoint()=="/")
+            {
+                _hasValidDiskLayout = true;
+                break;
+            }
+        }
+    }
+    if (_hasValidDiskLayout!=oldLayout)
+    {
+        emit diskLayoutStatusChanged(this);
+    }
+    foreach (Host* h, _hosts) {
+        h->checkDiskLayoutStatus();
+    }
+}
+
+void ComputerLab::changeSoft(QString soft, bool checked)
+{
+    if (checked)
+    {
+        if (!_softwareList.contains(soft)) _softwareList.append(soft);
+    }
+    else
+    {
+        _softwareList.removeAll(soft);
+    }
+}
+
+bool ComputerLab::containsSoft(QString soft)
+{
+    return _softwareList.contains(soft);
+}
+
+bool ComputerLab::hasRootPassword()
+{
+    return !_rootPasswordHash.isEmpty();
+}
+
+void ComputerLab::setRootPassword(QString password)
+{
+    qDebug() << _rootPasswordHash;
+    _rootPasswordHash = User::hashPassword(password);
 }

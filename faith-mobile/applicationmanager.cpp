@@ -74,13 +74,18 @@ bool ApplicationManager::configFileUpdate(QString filename)
         if (db.open())
         {
             QString ip;
-            QSqlQuery querry("select key from general where value='ip';");
+            QSqlQuery querry("select value from general where key='ip';");
             if (querry.next()) ip = querry.value(0).toString();
             db.close();
             laboratoriesModel->updateHost(ip);
             return true;
         }
         return false;
+    }
+    else if (extension=="labconfig")
+    {
+        QString labname = tmp.remove(".labconfig");
+        return laboratoriesModel->updateLaboratoryConfig(labname);
     }
     else
     {
@@ -111,12 +116,16 @@ bool ApplicationManager::configFileDelete(QString filename)
         }
         return false;
     }
+    else if (extension=="labconfig")
+    {
+        QString labname = tmp.remove(".labconfig");
+        return laboratoriesModel->removeLaboratoryConfig(labname);
+    }
     else
     {
         qDebug() << "EXTENSION " << extension << " NOT SUPPORTED";
         return false;
     }
-
 }
 
 bool ApplicationManager::downloadConfigFile(QString filename)

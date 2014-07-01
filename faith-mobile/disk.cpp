@@ -31,7 +31,6 @@ int Disk::stringToMB(QString text)
                 tmp/=1000000;
             }
             int ret = (int)tmp;
-            qDebug() << number<< unit << ret;
             return ret;
         }
     }
@@ -62,6 +61,11 @@ void Disk::_write(QDataStream &stream)
     foreach (Partition *p, _partitions) p->_write(stream);
 }
 
+void Disk::_deletePartitionFromList(Partition *p)
+{
+    _partitions.removeOne(p);
+}
+
 Disk::Disk(DiskLabel::Label diskLabel, QString devName) : QObject(0)
 {
     _diskLabel = diskLabel;
@@ -71,6 +75,7 @@ Disk::Disk(DiskLabel::Label diskLabel, QString devName) : QObject(0)
 Disk::~Disk()
 {
     foreach (Partition* p, _partitions) {
+        p->_clearParent();
         delete p;
     }
     _partitions.clear();
@@ -230,8 +235,6 @@ bool Disk::canCreatePartition(QString mountpoint)
         }
     }
 }
-
-
 
 int Disk::minimumSize()
 {

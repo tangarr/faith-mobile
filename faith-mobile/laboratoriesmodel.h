@@ -6,6 +6,7 @@
 #include "laboratoriesmodelelement.h"
 
 class ComputerLab;
+class Host;
 
 class DiskLayout : public QObject
 {
@@ -50,6 +51,12 @@ public:
     QVariant data(const QModelIndex &index, int role) const;
     QHash<int, QByteArray> roleNames() const;
     QList<quint32> selectedHosts();
+    bool updateLaboratoryConfig(QString name);
+    bool removeLaboratoryConfig(QString name);
+
+private slots:
+    void _labDiskLayoutChanged(ComputerLab*);
+    void _hostDiskLayoutChanged(Host*);
 
 signals:
     void selectedHostCountChanged(int arg);

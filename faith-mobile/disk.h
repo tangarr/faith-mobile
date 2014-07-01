@@ -32,6 +32,7 @@ private:
 private:
     void _read(QDataStream &stream);
     void _write(QDataStream &stream);
+    void _deletePartitionFromList(Partition *p);
 public:
     explicit Disk(DiskLabel::Label diskLabel, QString devName);
     ~Disk();
@@ -57,6 +58,7 @@ public slots:
     int minimumSize();
 
     friend class ComputerLab;
+    friend class Partition;
 };
 
 #endif // DISK_H

@@ -29,8 +29,10 @@ class Partition : public QObject
 private:
     void _read(QDataStream &stream);
     void _write(QDataStream &stream);
+    void _clearParent();
 public:
     explicit Partition(Disk* disk);
+    ~Partition();
     Partition(Disk* disk, bool bootable, bool primary, bool preserve, int minSize, int maxSize, QString mountpoint, QString fstype);
     bool isBootable() const;
     QString name();

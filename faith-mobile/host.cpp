@@ -166,8 +166,7 @@ void Host::checkDiskLayoutStatus()
     if (_diskLayout!=out)
     {
         _diskLayout = out;
-        // emit diskLayoutChanged
-        // check layout for all hosts
+        emit diskLayoutStatusChanged(this);
     }
 }
 

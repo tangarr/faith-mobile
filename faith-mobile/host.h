@@ -8,7 +8,7 @@ class ComputerLab;
 
 class Host : public LaboratoriesModelElement
 {
-    Q_GADGET
+    Q_OBJECT
     QString _hostname;
     QString _ip;
     ComputerLab *_lab;
@@ -25,6 +25,8 @@ public:
     void checkDiskLayoutStatus();
     QString configFileName() const;
     quint32 ipUint32() const;
+signals:
+    void diskLayoutStatusChanged(Host*);
 };
 
 #endif // HOST_H

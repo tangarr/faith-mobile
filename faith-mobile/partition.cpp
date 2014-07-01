@@ -1,5 +1,6 @@
 #include "partition.h"
 #include "disk.h"
+#include <QDebug>
 
 void Partition::_read(QDataStream &stream)
 {
@@ -23,9 +24,19 @@ void Partition::_write(QDataStream &stream)
     stream << _preserve;
 }
 
+void Partition::_clearParent()
+{
+    _disk = 0;
+}
+
 Partition::Partition(Disk *disk) : QObject(0)
 {
     _disk = disk;
+}
+
+Partition::~Partition()
+{
+    if (_disk) _disk->_deletePartitionFromList(this);
 }
 
 Partition::Partition(Disk *disk, bool bootable, bool primary, bool preserve, int minSize, int maxSize, QString mountpoint, QString fstype) : QObject(0)

@@ -16,5 +16,6 @@
         <file>SelectHost.qml</file>
         <file>RowOkCancel.qml</file>
         <file>PartitionInfo.qml</file>
+        <file>UserConfig.qml</file>
     </qresource>
 </RCC>

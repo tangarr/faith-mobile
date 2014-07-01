@@ -2,6 +2,7 @@
 #include "computerlab.h"
 #include "host.h"
 #include "faithMacro.h"
+#include "faithcore.h"
 
 LaboratoriesModel::LaboratoriesModel() : QAbstractListModel(0)
 {    
@@ -32,6 +33,7 @@ bool LaboratoriesModel::insertHost(QString lab, QString ip, QString hostname)
         beginInsertRows(QModelIndex(), index, index);
         elements.append(l);
         endInsertRows();
+        connect(l, SIGNAL(diskLayoutStatusChanged(ComputerLab*)), this, SLOT(_labDiskLayoutChanged(ComputerLab*)));
     }
     Host *host = new Host(ip, hostname);
     int host_index = l->indexWhereHostFit(host);
@@ -43,18 +45,68 @@ bool LaboratoriesModel::insertHost(QString lab, QString ip, QString hostname)
         beginInsertRows(QModelIndex(), new_index, new_index);
         elements.insert(new_index, host);
         endInsertRows();
+        connect(host, SIGNAL(diskLayoutStatusChanged(Host*)), this, SLOT(_hostDiskLayoutChanged(Host*)));
     }
     return true;
 }
 
-bool LaboratoriesModel::updateHost(QString ip)
+bool LaboratoriesModel::updateHost(QString ip_str)
 {
-    NOT_IMPLEMENTED_YET
+    Host *host=0;
+    quint32 ip = Faithcore::ipFromString(ip_str);
+    foreach (LaboratoriesModelElement *el, elements) {
+        ComputerLab* lab = static_cast<ComputerLab*>(el);
+        if (lab && lab->inherits("ComputerLab"))
+        {
+            foreach (Host* h, lab->hosts()) {
+                if (h->ipUint32()==ip)
+                {
+                    host = h;
+                    break;
+                }
+            }
+        }
+    }
+    if (host)
+    {
+        host->checkDiskLayoutStatus();
+        return true;
+    }
+    else return false;
 }
 
 bool LaboratoriesModel::removeHost(QString ip)
 {
-    NOT_IMPLEMENTED_YET
+    Host *host=0;
+    quint32 ip_int = Faithcore::ipFromString(ip);
+    foreach (LaboratoriesModelElement *el, elements) {
+        ComputerLab* lab = static_cast<ComputerLab*>(el);
+        if (lab && lab->inherits("ComputerLab"))
+        {
+            foreach (Host* h, lab->hosts()) {
+                if (h->ipUint32()==ip_int)
+                {
+                    host = h;
+                    break;
+                }
+            }
+        }
+    }
+    if (host)
+    {
+        int index = elements.indexOf(host);
+        if (index!=-1)
+        {
+            beginRemoveRows(QModelIndex(), index, index);
+            disconnect(host, SIGNAL(diskLayoutStatusChanged(Host*)), this, SLOT(_hostDiskLayoutChanged(Host*)));
+            elements.removeAt(index);
+            endRemoveRows();
+        }
+        host->lab()->removeHost(host);
+        delete host;
+        return true;
+    }
+    else return false;
 }
 
 int LaboratoriesModel::selectedHostCount()
@@ -62,7 +114,7 @@ int LaboratoriesModel::selectedHostCount()
     int out=0;
     foreach (LaboratoriesModelElement *el, elements) {
         ComputerLab* lab = static_cast<ComputerLab*>(el);
-        if (lab->inherits("ComputerLab"))
+        if (lab && lab->inherits("ComputerLab"))
         {
             foreach (Host* h, lab->hosts()) {
                 if (h->checked()) out++;
@@ -139,7 +191,7 @@ QList<quint32> LaboratoriesModel::selectedHosts()
     QList<quint32> out;
     foreach (LaboratoriesModelElement *el, elements) {
         ComputerLab* lab = static_cast<ComputerLab*>(el);
-        if (lab->inherits("ComputerLab"))
+        if (lab && lab->inherits("ComputerLab"))
         {
             foreach (Host* h, lab->hosts()) {
                 if (h->checked()) out.append(h->ipUint32());
@@ -149,10 +201,74 @@ QList<quint32> LaboratoriesModel::selectedHosts()
     return out;
 }
 
+bool LaboratoriesModel::updateLaboratoryConfig(QString name)
+{
+    ComputerLab* l=0;
+    foreach (LaboratoriesModelElement *el, elements) {
+        ComputerLab* lab = static_cast<ComputerLab*>(el);
+        if (lab && lab->inherits("ComputerLab") && lab->name()==name)
+        {
+            l=lab;
+            break;
+        }
+    }
+    if (l)
+    {
+        l->readConfiguration();
+        l->checkDiskLayout();
+        return true;
+    }
+    else return false;
+}
+
+bool LaboratoriesModel::removeLaboratoryConfig(QString name)
+{
+    ComputerLab* l=0;
+    foreach (LaboratoriesModelElement *el, elements) {
+        ComputerLab* lab = static_cast<ComputerLab*>(el);
+        if (lab && lab->inherits("ComputerLab") && lab->name()==name)
+        {
+            l=lab;
+            break;
+        }
+    }
+    if (l)
+    {
+        l->clear();
+        l->checkDiskLayout();
+        return true;
+    }
+    else return false;
+}
+
+void LaboratoriesModel::_labDiskLayoutChanged(ComputerLab *e)
+{
+    int index = elements.indexOf(e);
+    if (index!=-1)
+    {
+        QVector<int> vec;
+        vec << RoleHasDiskLayout;
+        QModelIndex m_index = createIndex(index,index);
+        emit dataChanged(m_index, m_index, vec);
+    }
+}
+
+void LaboratoriesModel::_hostDiskLayoutChanged(Host *e)
+{
+    int index = elements.indexOf(e);
+    if (index!=-1)
+    {
+        QVector<int> vec;
+        vec << RoleDiskLayoutStatus;
+        QModelIndex m_index = createIndex(index,index);
+        emit dataChanged(m_index, m_index, vec);
+    }
+}
+
 bool LaboratoriesModel::expand(int index)
 {
     ComputerLab *l = static_cast<ComputerLab*>(elements.at(index));
-    if (l)
+    if (l && l->inherits("ComputerLab"))
     {
         if (l->isExpanded()) return false;
         else
@@ -163,8 +279,9 @@ bool LaboratoriesModel::expand(int index)
                 beginInsertRows(QModelIndex(), index+1, index+rows);
                 QList<Host *> hosts = l->hosts();
                 for (int i=0; i<hosts.count(); i++)
-                {
+                {                    
                     elements.insert(index+i+1, hosts.at(i));
+                    connect(hosts.at(i), SIGNAL(diskLayoutStatusChanged(Host*)), this, SLOT(_hostDiskLayoutChanged(Host*)));
                 }
                 endInsertRows();
             }
@@ -177,7 +294,7 @@ bool LaboratoriesModel::expand(int index)
 bool LaboratoriesModel::colapse(int index)
 {
     ComputerLab *l = static_cast<ComputerLab*>(elements.at(index));
-    if (l)
+    if (l && l->inherits("ComputerLab"))
     {
         if (!l->isExpanded()) return false;
         else
@@ -188,7 +305,9 @@ bool LaboratoriesModel::colapse(int index)
                 beginRemoveRows(QModelIndex(), index+1, index+rows);
                 for (int i=0; i<rows; i++)
                 {
-                    elements.removeAt(index+1);
+                    Host *host = static_cast<Host*>(elements.at(index+1));
+                    disconnect(host, SIGNAL(diskLayoutStatusChanged(Host*)), this, SLOT(_hostDiskLayoutChanged(Host*)));
+                    elements.removeAt(index+1);                    
                 }
                 endRemoveRows();
             }
@@ -201,7 +320,7 @@ bool LaboratoriesModel::colapse(int index)
 void LaboratoriesModel::changeCheckedLab(int index, bool checked)
 {
     ComputerLab *l = static_cast<ComputerLab *>(elements.at(index));
-    if (l)
+    if (l && l->inherits("ComputerLab"))
     {
         l->setChecked(checked);
         foreach (Host* h, l->hosts()) {
@@ -222,7 +341,7 @@ void LaboratoriesModel::changeCheckedLab(int index, bool checked)
 void LaboratoriesModel::changeCheckedHost(int index, bool checked)
 {
     Host *h = static_cast<Host *>(elements.at(index));
-    if (h)
+    if (h && h->inherits("Host"))
     {
         ComputerLab *l = h->lab();
         bool p0 = l->isPartiallyChecked();
@@ -245,7 +364,7 @@ void LaboratoriesModel::changeCheckedHost(int index, bool checked)
 QObject *LaboratoriesModel::getLab(int index)
 {
     ComputerLab *l = static_cast<ComputerLab *>(elements.at(index));
-    if (l)
+    if (l && l->inherits("ComputerLab"))
     {
         return l;
     }

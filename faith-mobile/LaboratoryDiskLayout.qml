@@ -18,6 +18,7 @@ Rectangle {
     Column
     {
         id: column
+        spacing: 5
         Text {
             id: labelTitle
             text: "Disk Layout:"
@@ -25,6 +26,7 @@ Rectangle {
         Column
         {
             id: partitionLayoutView
+            spacing: 5
 
             Repeater
             {

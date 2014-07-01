@@ -22,6 +22,23 @@ QString User::username() const
     return m_username;
 }
 
+QString User::hashPassword(QString password)
+{
+    /*
+    static const QString posibleCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    int salt_length = qrand()%8+4;
+    QString salt = "$6$";
+    for (int i=0;i<salt_length;i++)
+    {
+        int index = qrand()%posibleCharacters.length();
+        salt.append(posibleCharacters.at(index));
+    }
+    salt.append("$");
+    password_hash = QString(crypt(password.toStdString().c_str(), salt.toStdString().c_str()));
+    */
+    return password;
+}
+
 void User::setUsername(QString arg)
 {
     if (m_username != arg) {
@@ -33,14 +50,5 @@ void User::setUsername(QString arg)
 
 void User::setPassword(QString password)
 {
-    static const QString posibleCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    int salt_length = qrand()%8+4;
-    QString salt = "$6$";
-    for (int i=0;i<salt_length;i++)
-    {
-        int index = qrand()%posibleCharacters.length();
-        salt.append(posibleCharacters.at(index));
-    }
-    salt.append("$");
-    //password_hash = QString(crypt(password.toStdString().c_str(), salt.toStdString().c_str()));
+    password_hash = hashPassword(password);
 }

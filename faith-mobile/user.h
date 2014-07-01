@@ -16,6 +16,8 @@ private:
 public:
     explicit User(QObject *parent = 0);
     QString username() const;
+    static QString hashPassword(QString password);
+
 signals:
     void usernameChanged(QString arg);
 public slots:

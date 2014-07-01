@@ -12,13 +12,14 @@ Rectangle {
         contentWidth: window.width
         contentHeight: column.height
         clip: true
-        interactive: true
+        interactive: contentHeight > height
 
         Column
         {
             id: column
             width: window.width
             clip: true
+            spacing: 5
 
             LaboratoryDiskLayout
             {
@@ -42,13 +43,21 @@ Rectangle {
             }
             LaboratorySoftwareList
             {
+                lab: window.laboratory
                 width: window.width
-                //laboratory: window.laboratory
             }
             LaboratoryUsersConfig
             {
+                id: laboratoryUsersConfig
                 width: window.width
-                //laboratory: window.laboratory
+                lab: window.laboratory
+                hasRootPassword: lab.hasRootPassword()
+                onShowUserConfig:
+                {
+                    var wnd = userConfigView.createObject(window)
+                    wnd.usernameText = username
+                    wnd.usernameEnabled = usernameEnabled
+                }
             }
             Row
             {
@@ -66,8 +75,9 @@ Rectangle {
                         if (laboratory.writeConfiguration())
                         {
                             laboratory.backupDelete();
+                            laboratory.checkDiskLayout();
                             window.destroy()
-                        }
+                        }                        
                     }
                 }
                 Button
@@ -88,7 +98,6 @@ Rectangle {
         {
             laboratory.backupCreate();
         }
-
     }
     Component
     {
@@ -120,6 +129,19 @@ Rectangle {
             laboratory: window.laboratory
             onCloseWindow: { destroy() }
         }
-
+    }
+    Component
+    {
+        id: userConfigView
+        UserConfig
+        {
+            width: window.width
+            height: window.height
+            lab: window.laboratory
+            onRootPasswordChanged:
+            {
+                laboratoryUsersConfig.hasRootPassword = true
+            }
+        }
     }
 }
