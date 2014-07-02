@@ -9,6 +9,12 @@ Rectangle {
     property alias usernameText: username.text
     property QtObject lab: null
 
+    property alias userHome : homeDir.text
+    property alias userHomeCreate: homeCreate.checked
+    property alias userShell: shell.editText
+
+    property int currentIndex: -1
+
     signal rootPasswordChanged()
 
     Flickable
@@ -24,8 +30,8 @@ Rectangle {
             width: window.width
             spacing: 5
             Label
-            {
-                text: "Username:"
+            {                
+                text: "Username: "+(currentIndex==-1 && lab!=null && lab.userExist(username.text)?"USER ALREADY EXIST":"")
                 visible: !(usernameText=="root" && !usernameEnabled)
             }
             TextField
@@ -36,7 +42,13 @@ Rectangle {
             }
             Label
             {
-                text: "Password " + ((password1.text.length<6)?"[Password too short]":"")
+                text:
+                {
+                    var t = "Password ";
+                    if (password1.text=="" && currentIndex !=-1) return t+" [Leave empty for old password]"
+                    if (password1.text.length<6) return t+"[Password too short]"
+                    return t
+                }
             }
             TextField
             {
@@ -85,7 +97,13 @@ Rectangle {
             RowOkCancel
             {
                 width: window.width
-                enabledOK: username.text.length > 0 && password1.text.length >= 6 && password1.text == password2.text
+                enabledOK:
+                {
+                    if (currentIndex==-1)
+                        return username.text.length > 0 && password1.text.length >= 6 && password1.text == password2.text && lab!=null && !lab.userExist(username.text)
+                    else
+                        return (password1.text.length==0) || password1.text.length >= 6 && password1.text == password2.text
+                }
                 onOkClicked:
                 {
                     if (lab!= null)
@@ -95,8 +113,13 @@ Rectangle {
                             rootPasswordChanged()
                             lab.setRootPassword(password1.text)
                         }
+                        else if (currentIndex==-1)
+                        {                            
+                            lab.addUser(username.text, password1.text, shell.editText, homeDir.text)
+                        }
                         else
                         {
+                            lab.updateUser(currentIndex, password1.text, shell.editText, homeDir.text)
                         }
                         window.destroy()
                     }

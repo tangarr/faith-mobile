@@ -24,22 +24,16 @@ void Partition::_write(QDataStream &stream)
     stream << _preserve;
 }
 
-void Partition::_clearParent()
-{
-    _disk = 0;
-}
-
-Partition::Partition(Disk *disk) : QObject(0)
+Partition::Partition(Disk *disk) : QObject(disk)
 {
     _disk = disk;
 }
 
 Partition::~Partition()
 {
-    if (_disk) _disk->_deletePartitionFromList(this);
 }
 
-Partition::Partition(Disk *disk, bool bootable, bool primary, bool preserve, int minSize, int maxSize, QString mountpoint, QString fstype) : QObject(0)
+Partition::Partition(Disk *disk, bool bootable, bool primary, bool preserve, int minSize, int maxSize, QString mountpoint, QString fstype) : QObject(disk)
 {
     _disk=disk;
     _bootable=bootable;

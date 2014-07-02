@@ -21,7 +21,7 @@ bool ComputerLab::_readConfiguration(const QByteArray &data)
     stream >> count;
     for (int i=0; i<count; i++)
     {
-        Disk *d = new Disk(DiskLabel::MsDos, "dev");
+        Disk *d = new Disk(DiskLabel::MsDos, "dev", this);
         d->_read(stream);
         _disks.append(d);
     }
@@ -29,7 +29,7 @@ bool ComputerLab::_readConfiguration(const QByteArray &data)
     stream >> count;
     for (int i=0; i<count; i++)
     {
-        User *u = new User();
+        User *u = new User(this);
         u->_read(stream);
         _users.append(u);
     }
@@ -53,6 +53,65 @@ QByteArray &ComputerLab::_writeConfiguration() const
 QString ComputerLab::_configurationFilename() const
 {
     return "config/"+_name+".labconfig";
+}
+
+bool ComputerLab::_writeDiskLayoutConfiguration()
+{
+    QString file_path = "config/"+_name.toUpper()+".diskconfig";
+    QFile file(file_path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return false;
+    QTextStream stream(&file);
+    foreach (Disk* d, _disks) {
+        QString dev = d->devName();
+        QString disklabel = (d->diskLabel()==DiskLabel::MsDos)?"msdos":"gpt";
+        QStringList preserve;
+        QString boot;
+        foreach (Partition* p, d->partitions()) {
+            if (p->isBootable()) boot=p->name();
+            if (p->isPreserved()) preserve.append(p->name());
+        }
+        QString line = "disk_config "+dev+" ";
+        if (!preserve.isEmpty())
+        {
+            line+= "preserve_always:";
+            foreach (QString str, preserve) {
+                line+=str.remove(dev)+",";
+            }
+            line.remove(line.length()-1, 1);
+            line+=" ";
+        }
+        line+="disklabel:"+disklabel+" ";
+        if (!boot.isEmpty()) line+="bootable:"+boot.remove(dev);
+        line += "\n";
+        stream << line << "\n";
+        foreach (Partition *p, d->partitions()) {
+            line = (p->isPrimary())?"primary ":"logical ";
+            line+= (p->mountpoint().isEmpty())?"- ":p->mountpoint()+" ";
+            line+= QString::number(p->minSize());
+            if (p->maxSize()==0) line+="- ";
+            else if (p->maxSize()>p->minSize()) line+="-"+QString::number(p->maxSize())+" ";
+            line+= p->fstype()+" ";
+            if (p->mountpoint().isEmpty() || p->mountpoint()=="-") line+="-";
+            else line+="defaults";
+            stream << line << "\n";
+        }
+    }
+    file.close();
+    QString address = Config::instance()->server_address();
+    int port = Config::instance()->server_port();
+    QTcpSocket socket;
+    socket.connectToHost(address, port);
+    if (socket.state()!=QTcpSocket::ConnectedState) socket.waitForConnected();
+    if (socket.state()!=QTcpSocket::ConnectedState)
+    {
+        return false;
+    }
+    FaithMessage::MsgSendFile(file_path).send(&socket);
+    FaithMessage msg;
+    msg.recive(&socket);
+    socket.disconnectFromHost();
+    if (socket.state()!=QTcpSocket::UnconnectedState) socket.waitForDisconnected();
+    return  (msg.getMessageCode()==Faithcore::OK);
 }
 
 ComputerLab::ComputerLab(QString name, LaboratoriesModel *parent)
@@ -215,7 +274,7 @@ bool ComputerLab::createDisk(QString devname, DiskLabel::Label diskLabel)
     foreach (Disk *d, _disks) {
         if (d->devName() == devname) return false;
     }
-    Disk *d = new Disk(diskLabel, devname);
+    Disk *d = new Disk(diskLabel, devname, this);
     _disks.append(d);
     emit diskCountChanged(_disks.count());
     return true;
@@ -274,7 +333,8 @@ bool ComputerLab::writeConfiguration()
     msg.recive(&socket);
     socket.disconnectFromHost();
     if (socket.state()!=QTcpSocket::UnconnectedState) socket.waitForDisconnected();
-    return (msg.getMessageCode()==Faithcore::OK);
+    if (msg.getMessageCode()!=Faithcore::OK) return false;
+    else return _writeDiskLayoutConfiguration();
 }
 
 bool ComputerLab::removeDisk(int index)
@@ -431,4 +491,87 @@ void ComputerLab::setRootPassword(QString password)
 {
     qDebug() << _rootPasswordHash;
     _rootPasswordHash = User::hashPassword(password);
+}
+
+bool ComputerLab::userExist(QString username)
+{
+    if (username=="root") return true;
+    foreach (User *u, _users) {
+        if (u->username()==username) return true;
+    }
+    return false;
+}
+
+bool ComputerLab::addUser(QString username, QString password, QString shell, QString home)
+{
+    if (userExist(username)) return false;
+    User *u = new User(this);
+    u->setUsername(username);
+    u->setPassword(password);
+    u->setHomeDir(home);
+    u->setShell(shell);
+    _users.append(u);
+    emit userCountChanged(_users.count());
+    return true;
+}
+
+bool ComputerLab::updateUser(QString username, QString password, QString shell, QString home)
+{
+    foreach (User *u, _users) {
+        if (u->username()==username)
+        {
+            if (!password.isEmpty()) u->setPassword(password);
+            u->setShell(shell);
+            u->setHomeDir(home);
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ComputerLab::updateUser(int index, QString password, QString shell, QString home)
+{
+    if (index>=0 && index < _users.count())
+    {
+        User *u = _users.at(index);
+        if (!password.isEmpty()) u->setPassword(password);
+        u->setShell(shell);
+        u->setHomeDir(home);
+        return true;
+    }
+    else return false;
+
+}
+
+bool ComputerLab::removeUser(QString username)
+{
+    foreach (User *u, _users) {
+        if (u->username()==username)
+        {
+            _users.removeAll(u);
+            delete u;
+            emit userCountChanged(_users.count());
+            return true;
+        }
+    }
+    return false;
+}
+
+bool ComputerLab::removeUser(int index)
+{
+    if (index>=0 && index < _users.count())
+    {
+        User *u = _users.at(index);
+        delete u;
+        _users.removeAt(index);
+        emit userCountChanged(_users.count());
+        return true;
+    }
+    else return false;
+}
+
+QObject *ComputerLab::user(int index)
+{
+    if (index>=0 && index < _users.count()) return _users.at(index);
+    else return 0;
 }

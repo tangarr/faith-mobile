@@ -32,9 +32,8 @@ private:
 private:
     void _read(QDataStream &stream);
     void _write(QDataStream &stream);
-    void _deletePartitionFromList(Partition *p);
 public:
-    explicit Disk(DiskLabel::Label diskLabel, QString devName);
+    explicit Disk(DiskLabel::Label diskLabel, QString devName, QObject* parent);
     ~Disk();
     void emitMinimumSizeChanged();
     const QList <Partition*> partitions() const;

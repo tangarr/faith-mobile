@@ -58,6 +58,30 @@ Rectangle {
                     wnd.usernameText = username
                     wnd.usernameEnabled = usernameEnabled
                 }
+                onShowUserEdit:
+                {
+                    if (lab)
+                    {
+                    var user = lab.user(index)
+                        if (user)
+                        {
+                            var wnd = userConfigView.createObject(window)
+                            wnd.usernameText = user.username()
+                            wnd.usernameEnabled = false
+                            wnd.currentIndex = index
+                            wnd.userShell = user.shell()
+                            if (user.homeDir()=="")
+                            {
+                                wnd.userHomeCreate = false
+                            }
+                            else
+                            {
+                                wnd.userHomeCreate = true
+                                wnd.userHome = user.homeDir()
+                            }
+                        }
+                    }
+                }
             }
             Row
             {

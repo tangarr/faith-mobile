@@ -29,6 +29,7 @@ private: // functions
     bool _readConfiguration(const QByteArray& data);
     QByteArray &_writeConfiguration() const;
     QString _configurationFilename() const;
+    bool _writeDiskLayoutConfiguration();
 
 public:
     ComputerLab(QString name, LaboratoriesModel* parent);
@@ -76,6 +77,13 @@ public slots:
     bool containsSoft(QString soft);
     bool hasRootPassword();
     void setRootPassword(QString password);
+    bool userExist(QString username);
+    bool addUser(QString username, QString password, QString shell, QString home);
+    bool updateUser(QString username, QString password, QString shell, QString home);
+    bool updateUser(int index, QString password, QString shell, QString home);
+    bool removeUser(QString username);
+    bool removeUser(int index);
+    QObject* user(int index);
 };
 
 #endif // COMPUTERLAB_H

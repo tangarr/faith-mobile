@@ -1,15 +1,34 @@
 #include "user.h"
 #include <unistd.h>
 
+
+QString User::shell() const
+{
+    return _shell;
+}
+
+void User::setShell(const QString &shell)
+{
+    _shell = shell;
+}
+
+QString User::homeDir() const
+{
+    return _homeDir;
+}
+
+void User::setHomeDir(const QString &homeDir)
+{
+    _homeDir = homeDir;
+}
 void User::_read(QDataStream &stream)
 {
-    stream >> m_username >> password_hash;
-    emit usernameChanged(m_username);
+    stream >> _username >> _password >> _shell >> _homeDir;
 }
 
 void User::_write(QDataStream &stream)
 {
-    stream << m_username << password_hash;
+    stream << _username << _password << _shell << _homeDir;
 }
 
 User::User(QObject *parent) :
@@ -19,7 +38,7 @@ User::User(QObject *parent) :
 
 QString User::username() const
 {
-    return m_username;
+    return _username;
 }
 
 QString User::hashPassword(QString password)
@@ -41,14 +60,11 @@ QString User::hashPassword(QString password)
 
 void User::setUsername(QString arg)
 {
-    if (m_username != arg) {
-        m_username = arg;
-        emit usernameChanged(arg);
-    }
+    _username = arg;
 }
 
 
 void User::setPassword(QString password)
 {
-    password_hash = hashPassword(password);
+    _password = hashPassword(password);
 }

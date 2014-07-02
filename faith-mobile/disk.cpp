@@ -61,12 +61,7 @@ void Disk::_write(QDataStream &stream)
     foreach (Partition *p, _partitions) p->_write(stream);
 }
 
-void Disk::_deletePartitionFromList(Partition *p)
-{
-    _partitions.removeOne(p);
-}
-
-Disk::Disk(DiskLabel::Label diskLabel, QString devName) : QObject(0)
+Disk::Disk(DiskLabel::Label diskLabel, QString devName, QObject* parent) : QObject(parent)
 {
     _diskLabel = diskLabel;
     _devName = devName;
@@ -75,7 +70,6 @@ Disk::Disk(DiskLabel::Label diskLabel, QString devName) : QObject(0)
 Disk::~Disk()
 {
     foreach (Partition* p, _partitions) {
-        p->_clearParent();
         delete p;
     }
     _partitions.clear();

@@ -29,7 +29,6 @@ class Partition : public QObject
 private:
     void _read(QDataStream &stream);
     void _write(QDataStream &stream);
-    void _clearParent();
 public:
     explicit Partition(Disk* disk);
     ~Partition();
