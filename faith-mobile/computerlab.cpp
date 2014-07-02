@@ -73,7 +73,7 @@ bool ComputerLab::_writeDiskLayoutConfiguration()
         QString line = "disk_config "+dev+" ";
         if (!preserve.isEmpty())
         {
-            line+= "preserve_always:";
+            line+= "preserve_lazy:";
             foreach (QString str, preserve) {
                 line+=str.remove(dev)+",";
             }
