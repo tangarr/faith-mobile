@@ -59,7 +59,7 @@ Rectangle {
             {
                 id: fstype
                 implicitWidth: window.width
-                model: ["ext4", "ext3", "reiserfs", "jfs", "xfs", "ntfs", "vfat", "swap"]
+                model: ["ext4", "ext3", "reiserfs", "xfs", "ntfs", "vfat", "swap"]
                 onCurrentIndexChanged:
                 {
                     if (currentText=="swap") mountPoint.editText = "swap"
