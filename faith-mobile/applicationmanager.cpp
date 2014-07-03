@@ -108,7 +108,7 @@ bool ApplicationManager::configFileDelete(QString filename)
         if (db.open())
         {
             QString ip;
-            QSqlQuery querry("select key from general where value='ip';");
+            QSqlQuery querry("select value from general where key='ip';");
             if (querry.next()) ip = querry.value(0).toString();
             db.close();
             laboratoriesModel->removeHost(ip);
