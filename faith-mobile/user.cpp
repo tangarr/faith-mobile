@@ -54,7 +54,6 @@ QString User::hashPassword(QString password)
         salt.append(posibleCharacters.at(index));
     } 
     QString password_hash = QString(sha512_crypt(password.toStdString().c_str(), salt.toStdString().c_str()));
-    qDebug() << Q_FUNC_INFO << password_hash;
     return password_hash;
 }
 
