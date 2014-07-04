@@ -37,7 +37,7 @@ public:
     ~Disk();
     void emitMinimumSizeChanged();
     const QList <Partition*> partitions() const;
-    static int stringToMB(QString text);
+    static int stringToMiB(QString text);
 signals:
     void partitionCountChanged(int arg);
     void minimumSizeChanged(int arg);

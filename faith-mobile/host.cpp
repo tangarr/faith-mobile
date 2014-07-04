@@ -68,7 +68,7 @@ void Host::checkDiskLayoutStatus()
                     Disk* d = _lab->diskByName(arr[0]);
                     if (d)
                     {
-                        int size = Disk::stringToMB(arr[1]);
+                        int size = Disk::stringToMiB(arr[1]);
                         if (size < d->minimumSize())
                         {
                             out = DiskLayout::NotEnoughtSpace;
@@ -93,7 +93,7 @@ void Host::checkDiskLayoutStatus()
                                     Partition *p = static_cast<Partition*>(d->partition(i));
                                     if (p)
                                     {
-                                        int size = Disk::stringToMB(query.value(0).toString());
+                                        int size = Disk::stringToMiB(query.value(0).toString());
                                         QString fs_type = query.value(1).toString();
                                         QString flags = query.value(2).toString();
                                         int id = query.value(3).toInt();

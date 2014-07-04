@@ -85,11 +85,13 @@ bool ComputerLab::_writeDiskLayoutConfiguration()
         line += "\n";
         stream << line << "\n";
         foreach (Partition *p, d->partitions()) {
+            int minSize = p->minSize() -1;
             line = (p->isPrimary())?"primary ":"logical ";
             line+= (p->mountpoint().isEmpty())?"- ":p->mountpoint()+" ";
-            line+= QString::number(p->minSize());
+            line+= QString::number(minSize)+"MiB";
             if (p->maxSize()==0) line+="- ";
-            else if (p->maxSize()>p->minSize()) line+="-"+QString::number(p->maxSize())+" ";
+            else if (p->maxSize()>minSize) line+="-"+QString::number(p->maxSize())+"MiB ";
+            else line+=" ";
             line+= p->fstype()+" ";
             if (p->mountpoint().isEmpty() || p->mountpoint()=="-") line+="-";
             else line+="defaults";
@@ -421,7 +423,7 @@ bool ComputerLab::loadDiskSchemaFromHost(int index)
                 query.exec();
                 bool primary = true;
                 while (query.next()) {
-                    int size = Disk::stringToMB(query.value(0).toString());
+                    int size = Disk::stringToMiB(query.value(0).toString());
                     QString fstype = query.value(1).toString();
                     QString flags = query.value(2).toString();
                     if (flags.contains("extended"))

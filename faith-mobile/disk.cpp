@@ -4,8 +4,9 @@
 #include <QVariant>
 #include <QDebug>
 
-int Disk::stringToMB(QString text)
+int Disk::stringToMiB(QString text)
 {
+    if (text.endsWith("MiB")) return text.remove("MiB").toInt();
     for (int i=text.length()-1; i>=0 ; i--)
     {
         if (text[i].isDigit() || text[i]=='.')

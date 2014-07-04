@@ -17,6 +17,11 @@ Rectangle {
 
     signal rootPasswordChanged()
 
+    MouseArea
+    {
+        anchors.fill: parent
+    }
+
     Flickable
     {
         width: window.width
@@ -100,7 +105,12 @@ Rectangle {
                 enabledOK:
                 {
                     if (currentIndex==-1)
-                        return username.text.length > 0 && password1.text.length >= 6 && password1.text == password2.text && lab!=null && !lab.userExist(username.text)
+                    {
+                        if (username.text=="root")
+                            return password1.text.length >= 6 && password1.text == password2.text
+                        else
+                            return username.text.length > 0 && password1.text.length >= 6 && password1.text == password2.text && lab!=null && !lab.userExist(username.text)
+                    }
                     else
                         return (password1.text.length==0) || password1.text.length >= 6 && password1.text == password2.text
                 }

@@ -1,5 +1,6 @@
 #include "user.h"
-#include <unistd.h>
+#include <QDebug>
+#include "sha512crypt.h"
 
 
 QString User::shell() const
@@ -43,19 +44,18 @@ QString User::username() const
 
 QString User::hashPassword(QString password)
 {
-    /*
+
     static const QString posibleCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     int salt_length = qrand()%8+4;
-    QString salt = "$6$";
+    QString salt;
     for (int i=0;i<salt_length;i++)
     {
         int index = qrand()%posibleCharacters.length();
         salt.append(posibleCharacters.at(index));
-    }
-    salt.append("$");
-    password_hash = QString(crypt(password.toStdString().c_str(), salt.toStdString().c_str()));
-    */
-    return password;
+    } 
+    QString password_hash = QString(sha512_crypt(password.toStdString().c_str(), salt.toStdString().c_str()));
+    qDebug() << Q_FUNC_INFO << password_hash;
+    return password_hash;
 }
 
 void User::setUsername(QString arg)

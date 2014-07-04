@@ -64,7 +64,7 @@ Grid
     {
         id: fstype
         implicitWidth: controlWidth
-        model: ["ext4", "ext3", "reiserfs", "jfs", "xfs", "ntfs", "vfat", "swap"]
+        model: ["ext4", "ext3", "reiserfs", "xfs", "ntfs", "vfat", "swap"]
         onCurrentIndexChanged:
         {
             if (currentText=="swap") mountPoint.editText = "swap"
@@ -82,7 +82,7 @@ Grid
     {
         id: mountPoint
         implicitWidth: controlWidth
-        model: ["/", "/boot", "/home", "/usr", "/var", "/tmp", "-"]
+        model: ["-", "/", "/boot", "/home", "/usr", "/var", "/tmp"]
         enabled: (fstype.currentText=="swap") ? false : true
         editable: true
         onEditTextChanged:
