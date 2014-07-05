@@ -22,6 +22,7 @@ public:
     void setUsername(QString arg);
     void setShell(const QString &shell);
     void setHomeDir(const QString &homeDir);
+    QString password() const;
 
 public slots:    
     QString username() const;

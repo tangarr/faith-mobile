@@ -21,6 +21,90 @@ Rectangle {
             clip: true
             spacing: 5
 
+            Rectangle
+            {
+                width: window.width
+                height: generalColumn.height
+                id: generalSettings
+                Zones { id: zoneList }
+
+                function saveTimeZone()
+                {
+                    if (laboratory!=null && generalColumn.ready)
+                    {
+                        laboratory.setTimeZone(zone0.currentText+"/"+zone1.currentText)
+                    }
+                }
+
+                Column
+                {
+                    spacing: 5
+                    id: generalColumn
+                    property bool ready: false
+                    Label { text: "TimeZone" }
+                    ComboBox
+                    {
+                        id: zone0
+                        model: zoneList
+                        implicitWidth: window.width
+                        onCurrentTextChanged: generalSettings.saveTimeZone()
+                        currentIndex: {
+                            if (laboratory!=null)
+                            {
+                                console.out("zone0")
+                                var tz = laboratory.timeZone(1);
+                                var index = find(tz)
+                                return index
+                            }
+                            else return -1
+                        }
+                        Component.onCompleted:
+                        {
+                            if (laboratory!=null)
+                            {
+                                var z1 = laboratory.timeZone(1)
+                                var z2 = laboratory.timeZone(2)
+                                var index = find(z1)
+                                if (index!=-1) currentIndex = index
+                                index = zone1.find(z2)
+                                if (index!=-1) zone1.currentIndex = index
+                                generalColumn.ready = true
+                            }
+                        }
+                    }
+                    ComboBox
+                    {
+                        id: zone1
+                        model: zoneList.get(zone0.currentIndex).data
+                        implicitWidth: window.width
+                        onCurrentTextChanged: generalSettings.saveTimeZone()
+                        currentIndex:  {
+                            if (laboratory!=null)
+                            {
+                                console.out("zone1")
+                                var tz = laboratory.timeZone(2);
+                                var index = find(tz)
+                                return index
+                            }
+                            else return -1
+                        }
+                    }
+                    CheckBox
+                    {
+                        id: checkBoxUTC
+                        text: "UTC Clock"
+                        onCheckedChanged:
+                        {
+                            if (laboratory!=null)
+                            {
+                                laboratory.setUtc(checkBoxUTC.checked)
+                            }
+                        }
+                        checked: (laboratory!=null)?laboratory.utc():false
+                    }
+                }
+            }
+
             LaboratoryDiskLayout
             {
                 width: window.width

@@ -17,5 +17,6 @@
         <file>RowOkCancel.qml</file>
         <file>PartitionInfo.qml</file>
         <file>UserConfig.qml</file>
+        <file>Zones.qml</file>
     </qresource>
 </RCC>

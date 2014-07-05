@@ -22,6 +22,11 @@ void User::setHomeDir(const QString &homeDir)
 {
     _homeDir = homeDir;
 }
+
+QString User::password() const
+{
+    return _password;
+}
 void User::_read(QDataStream &stream)
 {
     stream >> _username >> _password >> _shell >> _homeDir;

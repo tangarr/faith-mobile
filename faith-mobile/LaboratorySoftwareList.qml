@@ -14,7 +14,7 @@ Rectangle {
         {
             id: base
             enabled: false
-            text: "BASE"
+            text: "DEBIAN"
             checked: (lab!=null)?lab.containsSoft(text):false
             onCheckedChanged: { if (lab!=null) lab.changeSoft(text, checked) }
         }

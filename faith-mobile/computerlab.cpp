@@ -9,6 +9,8 @@
 #include <QSqlError>
 #include "disk.h"
 #include "partition.h"
+#include <QRegExp>
+#include <QString>
 
 bool ComputerLab::_readConfiguration(const QByteArray &data)
 {
@@ -34,6 +36,7 @@ bool ComputerLab::_readConfiguration(const QByteArray &data)
         _users.append(u);
     }
     stream >> _softwareList;
+    stream >> _utc >> _timeZone;
     return true;
 }
 
@@ -47,12 +50,32 @@ QByteArray &ComputerLab::_writeConfiguration() const
     stream << (int)_users.count();
     foreach (User *u, _users) u->_write(stream);
     stream << _softwareList;
+    stream << _utc << _timeZone;
     return *array;
 }
 
 QString ComputerLab::_configurationFilename() const
 {
     return "config/"+_name+".labconfig";
+}
+
+bool ComputerLab::_sendFile(QString file_path)
+{
+    QString address = Config::instance()->server_address();
+    int port = Config::instance()->server_port();
+    QTcpSocket socket;
+    socket.connectToHost(address, port);
+    if (socket.state()!=QTcpSocket::ConnectedState) socket.waitForConnected();
+    if (socket.state()!=QTcpSocket::ConnectedState)
+    {
+        return false;
+    }
+    FaithMessage::MsgSendFile(file_path).send(&socket);
+    FaithMessage msg;
+    msg.recive(&socket);
+    socket.disconnectFromHost();
+    if (socket.state()!=QTcpSocket::UnconnectedState) socket.waitForDisconnected();
+    return  (msg.getMessageCode()==Faithcore::OK);
 }
 
 bool ComputerLab::_writeDiskLayoutConfiguration()
@@ -99,21 +122,55 @@ bool ComputerLab::_writeDiskLayoutConfiguration()
         }
     }
     file.close();
-    QString address = Config::instance()->server_address();
-    int port = Config::instance()->server_port();
-    QTcpSocket socket;
-    socket.connectToHost(address, port);
-    if (socket.state()!=QTcpSocket::ConnectedState) socket.waitForConnected();
-    if (socket.state()!=QTcpSocket::ConnectedState)
-    {
-        return false;
+    return _sendFile(file_path);
+}
+
+bool ComputerLab::_writeSoftwareList()
+{
+    QString file_path = "config/"+_name.toUpper()+".software";
+    QFile file(file_path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return false;
+    QTextStream stream(&file);
+    foreach (QString s, _softwareList) {
+        stream << s.replace(" ","") << "\n";
     }
-    FaithMessage::MsgSendFile(file_path).send(&socket);
-    FaithMessage msg;
-    msg.recive(&socket);
-    socket.disconnectFromHost();
-    if (socket.state()!=QTcpSocket::UnconnectedState) socket.waitForDisconnected();
-    return  (msg.getMessageCode()==Faithcore::OK);
+    file.close();
+    return _sendFile(file_path);
+}
+
+bool ComputerLab::_writeVarFile()
+{
+    QString file_path = "config/"+_name.toUpper()+".var";
+    QFile file(file_path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return false;
+    QTextStream stream(&file);
+    stream << "FAI_ALLOW_UNSIGNED=1\n";
+    stream << "UTC="+QString((_utc)?"yes\n":"no\n");
+    stream << "TIMEZONE="+(_timeZone)+"\n";
+    stream << "ROOTPW='"+_rootPasswordHash+"'\n";
+    stream << "STOP_ON_ERROR=700\n";
+    file.close();
+    return _sendFile(file_path);
+}
+
+bool ComputerLab::_writeUserScript()
+{
+    QString file_path = "config/"+_name.toUpper()+".10-create-users.script";
+    QFile file(file_path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) return false;
+    QTextStream stream(&file);
+    stream << "#!/bin/bash\n\n";
+    foreach (User* u, _users) {
+        stream << "$ROOTCMD useradd ";
+        if (u->homeDir().isEmpty()) stream << "-M ";
+        else stream << "-m -d " << u->homeDir() << " ";
+        if (!u->password().isEmpty()) stream << "-p '"<<u->password() << "' ";
+        stream << "-s " << u->shell() << " " << u->username() << "\n";
+    }
+    stream << "\nexit 0\n";
+    file.close();
+    return _sendFile(file_path);
+
 }
 
 ComputerLab::ComputerLab(QString name, LaboratoriesModel *parent)
@@ -121,9 +178,12 @@ ComputerLab::ComputerLab(QString name, LaboratoriesModel *parent)
     _name = name;
     _parent = parent;
     _expanded = false;
+    _utc = false;
+    _timeZone = "";
+    _softwareList.clear();
     readConfiguration();
     checkDiskLayout();
-    _softwareList.append("BASE");
+    if (!_softwareList.contains("DEBIAN")) _softwareList.append("DEBIAN");
 }
 
 bool ComputerLab::isParent() const
@@ -240,7 +300,9 @@ void ComputerLab::clear()
     removeUsers();
     _rootPasswordHash="";
     _softwareList.clear();
-    _softwareList.append("BASE");
+    _softwareList.append("DEBIAN");
+    _utc = false;
+    _timeZone = "";
 }
 
 QObject *ComputerLab::disk(int index)
@@ -336,7 +398,11 @@ bool ComputerLab::writeConfiguration()
     socket.disconnectFromHost();
     if (socket.state()!=QTcpSocket::UnconnectedState) socket.waitForDisconnected();
     if (msg.getMessageCode()!=Faithcore::OK) return false;
-    else return _writeDiskLayoutConfiguration();
+    if (!_writeDiskLayoutConfiguration()) return false;
+    if (!_writeSoftwareList()) return false;
+    if (!_writeVarFile()) return false;
+    if (!_writeUserScript()) return false;
+    return true;
 }
 
 bool ComputerLab::removeDisk(int index)
@@ -576,4 +642,36 @@ QObject *ComputerLab::user(int index)
 {
     if (index>=0 && index < _users.count()) return _users.at(index);
     else return 0;
+}
+
+QString ComputerLab::timeZone(int i)
+{
+    if (i==1)
+    {
+        int index = _timeZone.indexOf("/");
+        QString ret = _timeZone.left(index);
+        return ret;
+    }
+    else if (i==2)
+    {
+        int index = _timeZone.indexOf("/");
+        QString ret = _timeZone.mid(index+1);
+        return ret;
+    }
+    else return _timeZone;
+}
+
+void ComputerLab::setTimeZone(QString timeZone)
+{
+    _timeZone = timeZone;
+}
+
+bool ComputerLab::utc()
+{
+    return _utc;
+}
+
+void ComputerLab::setUtc(bool utc)
+{
+    _utc = utc;
 }

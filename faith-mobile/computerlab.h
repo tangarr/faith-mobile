@@ -25,11 +25,17 @@ private: // fields
     QString _rootPasswordHash;
     QByteArray _backup;
     bool _hasValidDiskLayout;
+    QString _timeZone;
+    bool _utc;
 private: // functions
     bool _readConfiguration(const QByteArray& data);
     QByteArray &_writeConfiguration() const;
     QString _configurationFilename() const;
+    bool _sendFile(QString filepath);
     bool _writeDiskLayoutConfiguration();
+    bool _writeSoftwareList();
+    bool _writeVarFile();
+    bool _writeUserScript();
 
 public:
     ComputerLab(QString name, LaboratoriesModel* parent);
@@ -84,6 +90,10 @@ public slots:
     bool removeUser(QString username);
     bool removeUser(int index);
     QObject* user(int index);
+    QString timeZone(int i=0);
+    void setTimeZone(QString timeZone);
+    bool utc();
+    void setUtc(bool utc);
 };
 
 #endif // COMPUTERLAB_H
