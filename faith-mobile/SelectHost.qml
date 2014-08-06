@@ -41,7 +41,7 @@ Rectangle
                 width: window.width
                 onOkClicked:
                 {
-                    laboratory.loadDiskSchemaFromHost(index)
+                    laboratory.loadDiskSchemaFromHost(selectHostViewBody.selectedIndex)
                     closeWindow()
                 }
                 onCancelClicked: { closeWindow() }
